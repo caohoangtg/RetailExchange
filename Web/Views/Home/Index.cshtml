@@ -1,0 +1,277 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="row ">
+    <div class="col-md-6">
+        <div class="row">
+            <div class="form-group  col-md-6">
+                <div class="col-md-7"><label>Product Number</label></div>
+                <div class="col-md-5">
+                    <div class="myselect">
+                        @Html.DropDownList("ItemMasterId", new SelectList(ViewBag.ItemMasterId, "value", "text"), "Number", htmlAttributes: new { @class = "form-control selectpicker", @id = "select" })
+                    </div>
+                    <input type="number" value="" id="selectId" class="idItem form-control" name="myinput" required />
+
+                </div>
+            </div>
+            <div class="col-md-6 form-group">
+                <div class="col-md-7"><label>Pack Sizer</label></div>
+                <div class="col-md-5">
+                    <input type="number" value="" class="pack form-control" name="myinput" required />
+                </div>
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-3" style="margin-left: 15px; margin-right: 5px;"><label>Description</label></div>
+            <div class="col-md-8" style="padding-right: 0px;">
+                <textarea rows="10" class="form-control description"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div><label>Product Image</label></div>
+        <br />
+        <div class="col-md-6 thumbnail" id="imgPreview" style="width: 200px; height: 200px; background-size: 100% 100%; background-image: url('/Image/default.png')">
+            <input type="hidden" id="imageData" value="default.png" />
+        </div>
+        <div class="col-md-6">
+            <div>
+                <input type="file" id="imageBrowsers" style="display: none" />
+                <button class="btn btn-default" onclick="$('#imageBrowsers').click()">Browser Logo</button>
+            </div>
+            <br />
+            <div>
+                <button class="btn btn-danger" id="discard">Discard Logo</button>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+<div class=" row">
+    <div id="tabs">
+        <ul class="nav nav-tabs">
+            <li class="active mytag"><a href="/Home/Index" class="tab ">Basic Information</a></li>
+            <li><a href="/Home/_Index2" class="tab">Inventory</a></li>
+        </ul>
+        <div class="showTab ">
+            @{
+                Html.RenderPartial("_Index1");
+            }
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        var showTab = $("div.shoTab");
+        $(document).ready(function () {
+            $("#selectId").hide();
+            $('.selectpicker').selectpicker({
+                liveSearch: true,
+                showSubtext: true
+            });
+            $('#selectId').focus(
+                function () {
+                    $("span .filter-option").val("Number");
+                    $(".myselect").show();
+                    $("#selectId").hide();
+                });
+            $(document).on("click", ".create", function (event) {
+                $(".myselect").hide();
+                $.ajax({
+                    url: "/Home/CreateId",
+                    type: "GET",
+                    contentType: false,
+                    processData: false,
+                    success: function (id) {
+                        $("#selectId").val(id).show();
+                        $("#select").val(id);
+                        EmptyData();
+                    },
+                    error: function () {
+                        alert("Fail");
+                    }
+                });
+            });
+            $(".idsearch").on("keydown", function (event) {
+                if (event.which == 13)
+                    $(".create").click();
+            });
+            $('#tabs ul li').click(function () {
+                var href = $("a", this).attr("href");
+                TagsClicked(href);
+                $("#tabs ul li").removeClass("active");
+                $(this).addClass("active");
+                return false;
+            });
+            $(document).on("change", "#select", function () {
+                idItem = $(this).val();
+                $(".idItem").val(idItem);
+                $("#discard").removeData("clicked");
+                $("#imageBrowsers").val('');
+                if (idItem != "") {
+                    ShowData(idItem);
+                } else {
+                    EmptyData();
+                }
+            });
+            $("#imageBrowsers").change(function () {
+                $("#discard").removeData("clicked");
+                var File = this.files;
+                if (File && File[0]) {
+                    ReadImage(File[0]);
+                }
+            });
+            $(document).on("click", "#discard", function () {
+                $('#imgPreview').css('background-image', 'url(/Image/default.png)');
+                $("#imageBrowsers").val('');
+                $(this).data('clicked', true);
+            });
+            $(document).on("click", "#save", function () {
+                if ($(".pack").val() < 1 || $(".pack").val() == "") {
+                    alert("Pack Sizer is required");
+                }
+                else {
+                    var data = new FormData;
+                    var idItem = $(".idItem").val();
+                    var file = $("#imageBrowsers").get(0).files;
+                    data.append("ItemMasterId", $(".idItem").val());
+                    data.append("Pack", $(".pack").val());
+                    data.append("Description", $(".description").val());
+                    data.append("ImageData", $("#imageData").val());
+                    data.append("ImageFile", file[0]);
+                    data.append("CostCenterCode", $(".costcenter").val());
+                    data.append("HazardousMaterial", $("#hazard").prop("checked"));
+                    data.append("ExpirationDate", $(".expiration").val());
+                    data.append("UnitPrice", $(".price").val());
+                    data.append("Width", $(".width").val());
+                    data.append("Length", $(".length").val());
+                    data.append("Height", $(".height").val());
+                    data.append("IsPrePack", $("#isprepack").prop("checked"));
+                    data.append("PrePackStyte", $(".style").val());
+                    if ($('#discard').data('clicked') || file[0] != null) {
+                        $.ajax({
+                            type: "POST",
+                            url: "/Home/Upload",
+                            data: data,
+                            contentType: false,
+                            processData: false,
+                            success: function () {
+                                $("#discard").removeData("clicked");
+                                $("#imageBrowsers").val('');
+                                ShowData(idItem);
+                                alert("Success");
+                            },
+                            error: function () {
+                                alert("Fail UpLoad");
+                            }
+                        });
+                    } else {
+                        $.ajax({
+                            type: "POST",
+                            url: "/Home/Edit",
+                            data: data,
+                            contentType: false,
+                            processData: false,
+                            success: function () {
+                                ShowData(idItem);
+                                alert("Success");
+                            },
+                            error: function () {
+                                alert("Fail Edit");
+                            }
+                        });
+                    }
+                }
+                return false;
+            });
+            $(document).on("click", ".table tbody tr", function () {
+                $("#discard").removeData("clicked");
+                $("#imageBrowsers").val('');
+                var getId = $(this).attr("id");
+                $("#selectId").val(getId);
+                $(".myselect").hide();
+                $("#selectId").show();
+                $("#tabs ul li").removeClass("active");
+                $(".mytag").addClass("active");
+                TagsClicked("/Home/Index");
+            });
+        });
+
+        function EmptyData() {
+            $(".pack").val("");
+            $(".description").val("");
+            $('#imgPreview').css('background-image', 'url(/Image/default.png)');
+            $('#imageData').val("default.png");
+            $(".costcenter").val("");
+            $("#hazard").prop("checked", false);
+            $(".expiration").val("2001-01-01");
+            $(".price").val("");
+            $(".width").val("");
+            $(".length").val("");
+            $(".height").val("");
+            $(".cube").val("");
+            $("#isprepack").prop("checked", false);
+            $(".style").val("");
+        }
+        function ReadImage(file) {
+            var reader = new FileReader;
+            var image = new Image;
+            reader.readAsDataURL(file);
+            reader.onload = function (_file) {
+                image.src = _file.target.result;
+                image.onload = function () {
+                    $('#imgPreview').css('background-image', 'url(' + _file.target.result + ')');
+                    $("#imgPreview").show();
+                }
+            }
+        }
+        function TagsClicked(href) {
+            $.ajax({
+                type: "GET",
+                url: href,
+                success: function (data) {
+                    $(".showTab").html(data);
+                    idItem = $(".idItem").val();
+                    if (idItem)
+                        (href == "/Home/Index") ? ShowData(idItem) : "";
+                },
+                error: function () {
+                    alert("Something went wrong is controller.");
+                }
+            });
+        }
+        function ShowData(idItem) {
+            $.ajax({
+                type: "POST",
+                url: "/Home/ChangeItem",
+                data: { id: idItem },
+                success: function (data) {
+                    //$(".idItem").val(data.ItemMasterId);
+                    $(".pack").val(data.Pack);
+                    $(".description").val(data.Description);
+                    $('#imgPreview').css('background-image', 'url(/Image/' + data.ImageData + ')');
+                    $('#imageData').val(data.ImageData);
+                    $(".costcenter").val(data.CostCenterCode);
+                    $("#hazard").prop("checked", data.HazardousMaterial);
+                    var value = new Date(parseInt(data.ExpirationDate.replace(/(^.*\()|([+-].*$)/g, '')));
+                    //var dat = value.getMonth() + 1 + "-" + value.getDate() + "-" + value.getFullYear();
+                    var dat = value.getFullYear() + "-" + ("0" + (value.getMonth() + 1)).slice(-2) + "-" + ("0" + value.getDate()).slice(-2);
+                    $(".expiration").val(dat);
+                    $(".price").val(data.UnitPrice);
+                    $(".width").val(data.Width);
+                    $(".length").val(data.Length);
+                    $(".height").val(data.Height);
+                    $(".cube").val(data.Width * data.Length * data.Height);
+                    $("#isprepack").prop("checked", data.IsPrePack);
+                    $(".style").val(data.PrePackStyte);
+                },
+                error: function (data) {
+                    alert("Something went wrong is controller.");
+                }
+            });
+        }
+    </script>
+    @*<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.5.1/chosen.jquery.min.js"></script>*@
+}   

@@ -1,0 +1,79 @@
+﻿
+@{ 
+    int sumOnhand = 0, sumAllocation = 0, sumAvailble = 0;
+    int sumOnhandpcs = 0, sumAllocationpcs = 0, sumAvailblepcs = 0;
+}
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Location</th>
+            <th>On Hand</th>
+            <th>On Hand Pcs</th>
+            <th>Allocated</th>
+            <th>Allocation Pcs</th>
+            <th>Available</th>
+            <th>Availble Pcs</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in ViewBag.ViewInventory)
+        {
+            int avail = @item.QtyOnHand - @item.QtyAllocated;
+            int availpcs =@avail * @item.ItemMaster.Pack;
+            int onhpcs = @item.QtyOnHand * @item.ItemMaster.Pack;
+            int allopcs = @item.QtyAllocated * @item.ItemMaster.Pack;
+            <tr id="@item.ItemMasterId">
+                <td>
+                    @item.Size
+                </td>
+                <td>
+                    @item.QtyOnHand
+                </td>
+                <td>
+                    @onhpcs
+                </td>
+                <td>
+                    @item.QtyAllocated
+                </td>
+                <td>
+                    @allopcs
+                </td>
+                <td>
+                    @avail
+                </td>
+                <td>
+                    @availpcs
+                </td>
+            </tr>
+
+            sumOnhand += @item.QtyOnHand;
+            sumAllocation += @item.QtyAllocated;
+            sumAvailble += @avail;
+            sumOnhandpcs += @onhpcs;
+            sumAllocationpcs += @allopcs;
+            sumAvailblepcs += @availpcs;
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>ALL SIZE</td>
+            <td>@sumOnhand</td>
+            <td>@sumOnhandpcs</td>
+            <td>@sumAllocation</td>
+            <td>@sumAllocationpcs</td>
+            <td>@sumAvailble</td>
+            <td>@sumAvailblepcs</td>
+        </tr>
+    </tfoot>
+</table>
+
+@*<div class="pagination row">
+        <a href="#">&laquo;</a>
+        <a href="#">1</a>
+        <a class="active" href="#">2</a>
+        <a href="#">3</a>
+        <a href="#">4</a>
+        <a href="#">5</a>
+        <a href="#">6</a>
+        <a href="#">&raquo;</a>
+    </div>*@
